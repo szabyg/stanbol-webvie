@@ -14,9 +14,10 @@
         rdfs:     'http://www.w3.org/2000/01/rdf-schema#'
 
     ANTT = ANTT or {}
+    Stanbol = Stanbol or {}
 
     # filter for TextAnnotations
-    ANTT.getTextAnnotations = (enhRdf) ->
+    Stanbol.getTextAnnotations = (enhRdf) ->
         res = _(enhRdf).map((obj, key) ->
             obj.id = key
             obj
@@ -33,7 +34,7 @@
             new ANTT.TextEnhancement s, enhRdf
 
     # filter the entityManager for TextAnnotations
-    ANTT.getEntityAnnotations = (enhRdf) ->
+    Stanbol.getEntityAnnotations = (enhRdf) ->
         _(enhRdf)
         .map((obj, key) ->
             obj.id = key
@@ -59,13 +60,12 @@
     # Generic API for a TextEnhancement
     # A TextEnhancement object has the methods for getting generic
     # text-enhancement-specific properties.
-    #
     # TODO Place it into a global Stanbol object.
-    ANTT.TextEnhancement = (enhancement, enhRdf) ->
+    Stanbol.TextEnhancement = (enhancement, enhRdf) ->
         @_enhancement = enhancement
         @_enhRdf = enhRdf
         @id = @_enhancement.id
-    ANTT.TextEnhancement.prototype =
+    Stanbol.TextEnhancement.prototype =
         # the text the annotation is for
         getSelectedText: ->
             @_vals("#{ns.enhancer}selected-text")[0]
@@ -102,10 +102,10 @@
             .map (x) -> x.value
 
     # Generic API for an EntityEnhancement. This is the implementation for Stanbol
-    ANTT.EntityEnhancement = (ee, textEnh) ->
+    Stanbol.EntityEnhancement = (ee, textEnh) ->
         @_textEnhancement = textEnh
         $.extend @, ee
-    ANTT.EntityEnhancement.prototype =
+    Stanbol.EntityEnhancement.prototype =
         getLabel: ->
             @_vals("#{ns.enhancer}entity-label")[0]
         getUri: ->
@@ -121,6 +121,34 @@
 
     # get or create a dom element containing only the occurrence of the found entity
     ANTT.getOrCreateDomElement = (element, text, options = {}) ->
+        # Find occurrence indexes of s in str
+        occurrences = (str, s) ->
+            res = []
+            last = 0
+            while str.indexOf(s, last + 1) isnt -1
+                next = str.indexOf s, last+1
+                res.push next
+                last = next
+
+        # Find the nearest number among the 
+        nearest = (arr, nr) ->
+            _(arr).sortedIndex nr
+
+        # Nearest position
+        nearestPosition = (str, s, ind) ->
+            arr = occurrences(str,s)
+            i1 = nearest arr, ind
+            if arr.length is 1
+                arr[0]
+            else if i1 is arr.length
+                arr[i1-1]
+            else
+                i0 = i1-1
+                d0 = ind - arr[i0]
+                d1 = arr[i1] - ind
+                if d1 > d0 then arr[i0]
+                else arr[i1]
+
         domEl = element
         textContentOf = (element) -> $(element).text().replace(/\n/g, " ")
         # find the text node
@@ -130,7 +158,7 @@
         start = options.start +
         textContentOf(element).indexOf textContentOf(element).trim()
         # Correct small position errors
-        start = ANTT.nearestPosition textContentOf(element), text, start
+        start = nearestPosition textContentOf(element), text, start
         pos = 0
         while textContentOf(domEl).indexOf(text) isnt -1 and domEl.nodeName isnt '#text'
             domEl = _(domEl.childNodes).detect (el) ->
@@ -156,34 +184,7 @@
             else
                 console.warn "dom element creation problem: #{textToCut} isnt #{text}"
 
-    # Find occurrence indexes of s in str
-    ANTT.occurrences = (str, s) ->
-        res = []
-        last = 0
-        while str.indexOf(s, last + 1) isnt -1
-            next = str.indexOf s, last+1
-            res.push next
-            last = next
-
-    # Find the nearest number among the 
-    ANTT.nearest = (arr, nr) ->
-        _(arr).sortedIndex nr
-
-    # Nearest position
-    ANTT.nearestPosition = (str, s, ind) ->
-        arr = @occurrences(str,s)
-        i1 = @nearest arr, ind
-        if arr.length is 1
-            arr[0]
-        else if i1 is arr.length
-            arr[i1-1]
-        else
-            i0 = i1-1
-            d0 = ind - arr[i0]
-            d1 = arr[i1] - ind
-            if d1 > d0 then arr[i0]
-            else arr[i1]
-
+    # Give back the last part of a uri for fallback label creation
     ANTT.uriSuffix = (uri) ->
         res = uri.substring uri.lastIndexOf("#") + 1
         res.substring res.lastIndexOf("/") + 1
@@ -214,12 +215,43 @@
                 }`
             null
 
-    # the analyze jQuery plugin runs a stanbol enhancement process
-#    ANTT.analyze = jQuery.fn.analyze = ->
+    ######################################################
+    # Annotate widget
+    # makes a content dom element interactively annotatable
+    ######################################################
     jQuery.widget 'IKS.annotate',
+        widgetName: "IKS.annotate"
         options:
             autoAnalyze: false
             debug: false
+            # namespaces necessary for the widget configuration
+            ns:
+                dbpedia:  "http://dbpedia.org/ontology/"
+                skos:     "http://www.w3.org/2004/02/skos/core#"
+            # Give a label to your expected enhancement types
+            getTypes: ->
+                [
+                    uri:   "#{@ns.dbpedia}Place"
+                    label: 'Place'
+                ,
+                    uri:   "#{@ns.dbpedia}Person"
+                    label: 'Person'
+                ,
+                    uri:   "#{@ns.dbpedia}Organisation"
+                    label: 'Organisation'
+                ,
+                    uri:   "#{@ns.skos}Concept"
+                    label: 'Concept'
+                ]
+            # Give a label to the sources the entities come from
+            getSources: ->
+                [
+                    uri: "http://dbpedia.org/resource/"
+                    label: "dbpedia"
+                ,
+                    uri: "http://sws.geonames.org/"
+                    label: "geonames"
+                ]
         _create: ->
             if @options.autoAnalyze
                 @enable()
@@ -229,9 +261,10 @@
                 info: ->
                 warn: ->
                 error: ->
-            # widgetentityCache.get(uri, cb) will get and cache the entity from an entityhub
+            # widget.entityCache.get(uri, cb) will get and cache the entity from an entityhub
             @entityCache = window.entityCache =
                 _entities: {}
+                # calling the get with a scope and callback will call cb(entity) with the scope as soon it's available.'
                 get: (uri, scope, cb) ->
                     # If entity is stored in the cache already just call cb
                     if @_entities[uri] and @_entities[uri].status is "done"
@@ -244,7 +277,6 @@
                             uri: uri
                         cache = @
                         # make a request to the entity hub
-#                        widget._logger.info "send request for", uri, @_entities[uri]
                         widget.options.connector.queryEntityHub uri, (entity) ->
                             if not entity.status
                                 if entity.id isnt uri
@@ -259,6 +291,7 @@
                         .bind "done", (event, entity) ->
                             cb.apply scope, [entity]
 
+        # analyze the widget element and show text enhancements
         enable: ->
             analyzedNode = @element
             # the analyzedDocUri makes the connection between a document state and
@@ -286,7 +319,7 @@
                             'type', s.getType(),
                             'EntityEnhancements', s.getEntityEnhancements()
                         @processTextEnhancement s, analyzedNode
-
+        # Remove all not accepted text enhancement widgets
         disable: ->
             $( ':IKS-annotationSelector', @element ).each () ->
                 $(@).annotationSelector 'disable'
@@ -327,6 +360,8 @@
     ######################################################
     ANTT.annotationSelector =
     jQuery.widget 'IKS.annotationSelector',
+        # just for debugging and understanding
+        _widgetName: "IKS.annotationSelector"
         options:
             ns:
                 dbpedia:  "http://dbpedia.org/ontology/"
@@ -387,9 +422,16 @@
                 info: ->
                 warn: ->
                 error: ->
-
         _destroy: ->
-            @close()
+            if @menu
+                @menu.destroy()
+                @menu.element.remove()
+                delete @menu
+            if @dialog
+                @dialog.destroy()
+                @dialog.element.remove()
+                @dialog.uiDialogTitlebar.remove()
+                delete @dialog
             
         # Produce type label list out of a uri list.
         # Filtered by the @options.types list
@@ -522,16 +564,9 @@
                 linkedEntity: @linkedEntity
                 textEnhancement: entityEnhancement.getTextEnhancement()
                 entityEnhancement: entityEnhancement
-        close: (event) ->
-            if @menu
-                @menu.destroy()
-                @menu.element.remove()
-                delete @menu
-            if @dialog
-                @dialog.destroy()
-                @dialog.element.remove()
-                @dialog.uiDialogTitlebar.remove()
-                delete @dialog
+        # closing the widget
+        close: ->
+            @destroy()
         _updateTitle: ->
             if @dialog
                 if @isAnnotated()
