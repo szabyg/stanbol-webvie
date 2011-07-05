@@ -142,9 +142,8 @@ a[typeof][about].concept {background-color: #eef;}
             <li>Connection to VIE - loosely coupled, easy integration</li>
             <li>Clean up decoupling from the stanbol backend - schema mapping</li>
             <li>Preview with client-side templating with jquery</li>
-            <li>Support Mocroformat</li>
+            <li>Support Microformat</li>
             <li>Edit relationships</li>
-        <ul>
         <h3>Dependencies</h3>
         <ul>
             <li>jQuery 1.5</li>
