@@ -281,16 +281,13 @@
       },
       _create: function() {
         var widget;
-        if (this.options.autoAnalyze) {
-          this.enable();
-        }
         widget = this;
         this._logger = this.options.debug ? console : {
           info: function() {},
           warn: function() {},
           error: function() {}
         };
-        return this.entityCache = window.entityCache = {
+        this.entityCache = window.entityCache = {
           _entities: {},
           get: function(uri, scope, cb) {
             var cache;
@@ -322,6 +319,9 @@
             }
           }
         };
+        if (this.options.autoAnalyze) {
+          return this.enable();
+        }
       },
       enable: function() {
         var analyzedNode;

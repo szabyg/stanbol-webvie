@@ -253,8 +253,6 @@
                     label: "geonames"
                 ]
         _create: ->
-            if @options.autoAnalyze
-                @enable()
             widget = @
             # logger can be turned on and off. It will show the real caller line in the log
             @_logger = if @options.debug then console else 
@@ -290,6 +288,8 @@
                         $( @_entities[uri] )
                         .bind "done", (event, entity) ->
                             cb.apply scope, [entity]
+            if @options.autoAnalyze
+                @enable()
 
         # analyze the widget element and show text enhancements
         enable: ->
