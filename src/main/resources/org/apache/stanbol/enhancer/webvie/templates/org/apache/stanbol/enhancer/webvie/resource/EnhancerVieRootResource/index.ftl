@@ -94,6 +94,7 @@ a[typeof][about].concept {background-color: #eef;}
                             .button('enable')
                             .button('option', 'label', 'Done');                        
                         } else {
+                            $('.enhanceButton')
                             .button('enable')
                             .button('option', 'label', 'error, see the log.. Try to enhance again!');                        
                         }
