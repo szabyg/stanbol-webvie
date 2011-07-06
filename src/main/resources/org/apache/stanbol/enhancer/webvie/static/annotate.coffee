@@ -292,7 +292,7 @@
                 @enable()
 
         # analyze the widget element and show text enhancements
-        enable: ->
+        enable: (cb) ->
             analyzedNode = @element
             # the analyzedDocUri makes the connection between a document state and
             # the annotations to it. We have to clean up the annotations to any
@@ -318,7 +318,12 @@
                             'selectedText', s.getSelectedText(),
                             'type', s.getType(),
                             'EntityEnhancements', s.getEntityEnhancements()
+                        # Process the text enhancements
                         @processTextEnhancement s, analyzedNode
+                    # trigger 'done' event with success = true
+                    @_trigger "done", true
+                    if typeof cb is "function"
+                        cb(true)
         # Remove all not accepted text enhancement widgets
         disable: ->
             $( ':IKS-annotationSelector', @element ).each () ->

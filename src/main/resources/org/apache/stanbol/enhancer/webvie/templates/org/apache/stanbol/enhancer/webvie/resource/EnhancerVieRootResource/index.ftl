@@ -55,7 +55,9 @@ a[typeof][about].concept {background-color: #eef;}
         });
 
         $('article.active-enhancement').remove();
-        $('#webview article').hallo({
+        
+        // make the content area editable
+        $('#content').hallo({
             plugins: {
               'halloformat': {}
             },
@@ -86,8 +88,19 @@ a[typeof][about].concept {background-color: #eef;}
             if($(this).button('option', 'enhState') === 'active'){
                 // annotate.enable()
                 try {
-                    $('#content').annotate('enable');
-                    $('.enhanceButton').button('option', 'label', 'Done');
+                    $('#content').annotate('enable', function(success){
+                        if(success){
+                            $('.enhanceButton')
+                            .button('enable')
+                            .button('option', 'label', 'Done');                        
+                        } else {
+                            .button('enable')
+                            .button('option', 'label', 'error, see the log.. Try to enhance again!');                        
+                        }
+                    });
+                    $('.enhanceButton')
+                    .button('disable')
+                    .button('option', 'label', 'in progress...')
                 } catch (e) {
                     alert(e);
                 }

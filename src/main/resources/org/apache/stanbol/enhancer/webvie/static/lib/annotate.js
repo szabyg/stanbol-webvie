@@ -323,7 +323,7 @@
           return this.enable();
         }
       },
-      enable: function() {
+      enable: function(cb) {
         var analyzedNode;
         analyzedNode = this.element;
         return this.options.connector.analyze(this.element, {
@@ -338,10 +338,14 @@
                 return false;
               }
             });
-            return _(textAnnotations).each(__bind(function(s) {
+            _(textAnnotations).each(__bind(function(s) {
               this._logger.info(s._enhancement, 'confidence', s.getConfidence(), 'selectedText', s.getSelectedText(), 'type', s.getType(), 'EntityEnhancements', s.getEntityEnhancements());
               return this.processTextEnhancement(s, analyzedNode);
             }, this));
+            this._trigger("done", true);
+            if (typeof cb === "function") {
+              return cb(true);
+            }
           }, this)
         });
       },
