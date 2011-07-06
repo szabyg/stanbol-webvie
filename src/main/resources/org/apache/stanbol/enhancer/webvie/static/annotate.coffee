@@ -31,7 +31,7 @@
             -1 * conf
 
         _(res).map (s)->
-            new ANTT.TextEnhancement s, enhRdf
+            new Stanbol.TextEnhancement s, enhRdf
 
     # filter the entityManager for TextAnnotations
     Stanbol.getEntityAnnotations = (enhRdf) ->
@@ -74,13 +74,13 @@
             @_vals("#{ns.enhancer}confidence")[0]
         # get Entities suggested for the text enhancement (if any)
         getEntityEnhancements: ->
-            rawList = _(ANTT.getEntityAnnotations @_enhRdf ).filter (ann) =>
+            rawList = _(Stanbol.getEntityAnnotations @_enhRdf ).filter (ann) =>
                 relations = _(ann["#{ns.dc}relation"])
                 .map (e) -> e.value
                 if (relations.indexOf @_enhancement.id) isnt -1 then true
                 else false
             _(rawList).map (ee) =>
-                new ANTT.EntityEnhancement ee, @
+                new Stanbol.EntityEnhancement ee, @
         # The type of the entity suggested (e.g. person, location, organization)
         getType: ->
             @_vals("#{ns.dc}type")[0]
@@ -220,7 +220,7 @@
     # makes a content dom element interactively annotatable
     ######################################################
     jQuery.widget 'IKS.annotate',
-        widgetName: "IKS.annotate"
+        __widgetName: "IKS.annotate"
         options:
             autoAnalyze: false
             debug: false
@@ -303,7 +303,7 @@
                     # Get enhancements
                     rdfJson = rdf.databank.dump()
 
-                    textAnnotations = ANTT.getTextAnnotations(rdfJson)
+                    textAnnotations = Stanbol.getTextAnnotations(rdfJson)
                     # Remove all textAnnotations without a selected text property
                     textAnnotations = _(textAnnotations)
                     .filter (textEnh) ->
@@ -361,7 +361,7 @@
     ANTT.annotationSelector =
     jQuery.widget 'IKS.annotationSelector',
         # just for debugging and understanding
-        _widgetName: "IKS.annotationSelector"
+        __widgetName: "IKS.annotationSelector"
         options:
             ns:
                 dbpedia:  "http://dbpedia.org/ontology/"

@@ -28,7 +28,7 @@
         return -1 * conf;
       });
       return _(res).map(function(s) {
-        return new ANTT.TextEnhancement(s, enhRdf);
+        return new Stanbol.TextEnhancement(s, enhRdf);
       });
     };
     Stanbol.getEntityAnnotations = function(enhRdf) {
@@ -70,7 +70,7 @@
       },
       getEntityEnhancements: function() {
         var rawList;
-        rawList = _(ANTT.getEntityAnnotations(this._enhRdf)).filter(__bind(function(ann) {
+        rawList = _(Stanbol.getEntityAnnotations(this._enhRdf)).filter(__bind(function(ann) {
           var relations;
           relations = _(ann["" + ns.dc + "relation"]).map(function(e) {
             return e.value;
@@ -82,7 +82,7 @@
           }
         }, this));
         return _(rawList).map(__bind(function(ee) {
-          return new ANTT.EntityEnhancement(ee, this);
+          return new Stanbol.EntityEnhancement(ee, this);
         }, this));
       },
       getType: function() {
@@ -242,7 +242,7 @@
       }
     };
     jQuery.widget('IKS.annotate', {
-      widgetName: "IKS.annotate",
+      __widgetName: "IKS.annotate",
       options: {
         autoAnalyze: false,
         debug: false,
@@ -330,7 +330,7 @@
           success: __bind(function(rdf) {
             var rdfJson, textAnnotations;
             rdfJson = rdf.databank.dump();
-            textAnnotations = ANTT.getTextAnnotations(rdfJson);
+            textAnnotations = Stanbol.getTextAnnotations(rdfJson);
             textAnnotations = _(textAnnotations).filter(function(textEnh) {
               if (textEnh.getSelectedText && textEnh.getSelectedText()) {
                 return true;
@@ -387,7 +387,7 @@
       }
     });
     ANTT.annotationSelector = jQuery.widget('IKS.annotationSelector', {
-      _widgetName: "IKS.annotationSelector",
+      __widgetName: "IKS.annotationSelector",
       options: {
         ns: {
           dbpedia: "http://dbpedia.org/ontology/",
